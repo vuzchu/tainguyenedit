@@ -1,0 +1,21 @@
+<?php
+/**
+ * Copy this file to config.local.php (same folder) and fill in real values.
+ * config.local.php is gitignored — it will never be committed, so real
+ * secrets stay out of git history and GitHub push protection.
+ */
+
+// ---- Database (your real InfinityFree / hosting credentials) ----
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'if0_37413994_sharedit');
+define('DB_USER', 'your_db_user');
+define('DB_PASS', 'your_db_password');
+
+// ---- Google OAuth ----
+// From Google Cloud Console > APIs & Services > Credentials.
+define('GOOGLE_CLIENT_ID', 'your-client-id.apps.googleusercontent.com');
+define('GOOGLE_CLIENT_SECRET', 'your-google-client-secret');
+
+// ---- ImgBB (cover image uploads) ----
+// From https://api.imgbb.com/
+define('IMGBB_API_KEY', 'your-imgbb-api-key');
