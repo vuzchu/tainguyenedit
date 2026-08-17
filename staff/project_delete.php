@@ -7,14 +7,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 csrf_verify();
 
-$user = current_user();
 $id = (int)($_POST['id'] ?? 0);
 
 $stmt = db()->prepare('SELECT * FROM project WHERE project_id = ?');
 $stmt->execute([$id]);
 $project = $stmt->fetch();
 
-if ($project && ((int)$project['user_id'] === (int)$user['user_id'] || is_admin())) {
+if ($project) {
     $del = db()->prepare('DELETE FROM project WHERE project_id = ?');
     $del->execute([$id]);
     flash('success', 'Đã xóa tài nguyên.');

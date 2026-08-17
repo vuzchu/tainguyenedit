@@ -37,16 +37,12 @@ if ($q !== '') {
 $users = $stmt->fetchAll();
 
 $pageTitle = 'Quản lý người dùng';
-require __DIR__ . '/../includes/header.php';
+$activeAdminNav = 'users';
+require __DIR__ . '/../includes/admin_header.php';
+require __DIR__ . '/../includes/admin_sidebar_end.php';
 ?>
 
 <div class="page-header"><h1>Người dùng</h1></div>
-<div class="admin-tabs">
-  <a href="<?= e(SITE_URL) ?>/admin/index.php">Tổng quan</a>
-  <a class="active" href="<?= e(SITE_URL) ?>/admin/users.php">Người dùng</a>
-  <a href="<?= e(SITE_URL) ?>/admin/categories.php">Danh mục</a>
-  <a href="<?= e(SITE_URL) ?>/admin/projects.php">Tất cả tài nguyên</a>
-</div>
 
 <form method="get" class="search-form" style="max-width:360px;margin:20px 0;">
   <input type="text" name="q" placeholder="Tìm theo tên, email..." value="<?= e($q) ?>">
@@ -98,4 +94,4 @@ require __DIR__ . '/../includes/header.php';
   </table>
 </div>
 
-<?php require __DIR__ . '/../includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/admin_footer.php'; ?>

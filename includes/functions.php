@@ -48,20 +48,24 @@ function csrf_verify(): void
 function time_ago(string $datetime): string
 {
     $diff = time() - strtotime($datetime);
-    if ($diff < 60) return 'vừa xong';
-    if ($diff < 3600) return floor($diff / 60) . ' phút trước';
-    if ($diff < 86400) return floor($diff / 3600) . ' giờ trước';
-    if ($diff < 2592000) return floor($diff / 86400) . ' ngày trước';
+    if ($diff < 60) return t('time.just_now');
+    if ($diff < 3600) return t('time.minutes_ago', ['n' => floor($diff / 60)]);
+    if ($diff < 86400) return t('time.hours_ago', ['n' => floor($diff / 3600)]);
+    if ($diff < 2592000) return t('time.days_ago', ['n' => floor($diff / 86400)]);
     return date('d/m/Y', strtotime($datetime));
 }
 
+/**
+ * Returns plain, unescaped text — the caller is responsible for calling e()
+ * when embedding the result in HTML (e.g. a meta tag).
+ */
 function excerpt_html(?string $html, int $length = 140): string
 {
-    $text = trim(preg_replace('/\s+/', ' ', strip_tags((string)$html)));
+    $text = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string)$html), ENT_QUOTES)));
     if (mb_strlen($text) <= $length) {
-        return e($text);
+        return $text;
     }
-    return e(mb_substr($text, 0, $length)) . '…';
+    return mb_substr($text, 0, $length) . '…';
 }
 
 /**

@@ -1,6 +1,6 @@
 <?php
-require_once __DIR__ . '/../includes/bootstrap.php';
-require_role([ROLE_STAFF, ROLE_ADMIN]);
+require_once __DIR__ . '/includes/bootstrap.php';
+require_login();
 
 $user = current_user();
 $errors = [];
@@ -14,42 +14,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $old['description'] = trim($_POST['description'] ?? '');
     $old['source'] = trim($_POST['source'] ?? '');
 
-    if ($old['title'] === '') $errors[] = 'Vui lòng nhập tiêu đề.';
-    if ($old['category_id'] <= 0) $errors[] = 'Vui lòng chọn danh mục.';
-    if ($old['source'] === '' || !filter_var($old['source'], FILTER_VALIDATE_URL)) $errors[] = 'Vui lòng nhập đường dẫn tải xuống hợp lệ.';
+    if ($old['title'] === '') $errors[] = t('submit.err_title');
+    if ($old['category_id'] <= 0) $errors[] = t('submit.err_category');
+    if ($old['source'] === '' || !filter_var($old['source'], FILTER_VALIDATE_URL)) $errors[] = t('submit.err_source');
 
     $imageUrl = trim($_POST['cover_url'] ?? '');
     if ($imageUrl === '') {
-        $errors[] = 'Vui lòng chọn ảnh bìa.';
+        $errors[] = t('submit.err_cover_required');
     } elseif (!is_valid_cover_url($imageUrl)) {
-        $errors[] = 'Tải ảnh bìa lên thất bại, vui lòng thử lại.';
+        $errors[] = t('submit.err_cover_upload');
     }
 
     if (!$errors) {
         $description = clean_html($old['description']);
+        // Community submissions always start disabled — staff/admin review and
+        // flip status to active from the existing edit page.
         $stmt = db()->prepare('INSERT INTO project (title, description, author, status, source, category_id, image) VALUES (?, ?, ?, ?, ?, ?, ?)');
         $stmt->execute([
             $old['title'],
             $description,
             $old['author'],
-            'active',
+            'disable',
             $old['source'],
             $old['category_id'],
             $imageUrl,
         ]);
         $newId = (int)db()->lastInsertId();
-        flash('success', 'Đăng tài nguyên thành công!');
+        flash('success', t('submit.success'));
         redirect(SITE_URL . '/project.php?id=' . $newId);
     }
 }
 
-$pageTitle = 'Đăng tài nguyên mới';
-require __DIR__ . '/../includes/header.php';
+$pageTitle = t('submit.title');
+require __DIR__ . '/includes/header.php';
 ?>
 
 <div class="form-card wide">
-  <h1>Đăng tài nguyên mới</h1>
-  <p class="form-subtitle">Chia sẻ pack chỉnh sửa, project file hoặc tài nguyên của bạn với cộng đồng</p>
+  <h1><?= t('submit.title') ?></h1>
+  <p class="form-subtitle"><?= t('submit.subtitle') ?></p>
 
   <?php foreach ($errors as $err): ?>
     <div class="alert alert-error"><?= e($err) ?></div>
@@ -59,43 +61,43 @@ require __DIR__ . '/../includes/header.php';
     <?= csrf_field() ?>
     <input type="hidden" name="cover_url" id="coverUrlInput" value="">
     <div class="form-group">
-      <label for="title">Tiêu đề</label>
+      <label for="title"><?= t('submit.field_title') ?></label>
       <input class="form-control" type="text" id="title" name="title" value="<?= e($old['title']) ?>" required>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label for="category_id">Danh mục</label>
+        <label for="category_id"><?= t('submit.field_category') ?></label>
         <select class="form-control" id="category_id" name="category_id" required>
-          <option value="">— Chọn danh mục —</option>
+          <option value=""><?= t('submit.field_category_placeholder') ?></option>
           <?php foreach (get_categories() as $cat): ?>
             <option value="<?= (int)$cat['category_id'] ?>" <?= $old['category_id'] === (int)$cat['category_id'] ? 'selected' : '' ?>><?= e($cat['category_name']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
       <div class="form-group">
-        <label for="author">Tên tác giả hiển thị</label>
+        <label for="author"><?= t('submit.field_author') ?></label>
         <input class="form-control" type="text" id="author" name="author" value="<?= e($old['author']) ?>">
       </div>
     </div>
     <div class="form-group">
-      <label for="source">Đường dẫn tải xuống (Google Drive, Mega...)</label>
+      <label for="source"><?= t('submit.field_source') ?></label>
       <input class="form-control" type="url" id="source" name="source" value="<?= e($old['source']) ?>" placeholder="https://..." required>
     </div>
     <div class="form-group">
-      <label for="description">Mô tả</label>
-      <textarea class="form-control" id="description" name="description" placeholder="Nội dung pack bao gồm những gì..."><?= e($old['description']) ?></textarea>
+      <label for="description"><?= t('submit.field_description') ?></label>
+      <textarea class="form-control" id="description" name="description" placeholder="<?= e(t('submit.field_description_placeholder')) ?>"><?= e($old['description']) ?></textarea>
     </div>
     <div class="form-group">
-      <label for="coverInput">Ảnh bìa</label>
+      <label for="coverInput"><?= t('submit.field_cover') ?></label>
       <div class="upload-drop">
         <input type="file" id="coverInput" accept="image/*" data-imgbb-key="<?= e(IMGBB_API_KEY) ?>" required>
-        <span class="hint">Ảnh sẽ được lưu trữ qua ImgBB. Tối đa 8MB.</span>
+        <span class="hint"><?= t('submit.field_cover_hint') ?></span>
         <span id="coverUploadStatus" class="hint"></span>
-        <img id="coverPreview" class="upload-preview" style="display:none;" alt="Xem trước ảnh bìa">
+        <img id="coverPreview" class="upload-preview" style="display:none;" alt="Preview">
       </div>
     </div>
-    <button type="submit" class="btn btn-primary btn-block">Đăng tài nguyên</button>
+    <button type="submit" class="btn btn-primary btn-block"><?= t('submit.submit_button') ?></button>
   </form>
 </div>
 
-<?php require __DIR__ . '/../includes/footer.php'; ?>
+<?php require __DIR__ . '/includes/footer.php'; ?>

@@ -48,39 +48,48 @@ if ($user && $projects) {
     $favoritedIds = array_map('intval', $favStmt->fetchAll(PDO::FETCH_COLUMN));
 }
 
-$pageTitle = $categoryId ? category_name($categoryId) : ($q !== '' ? 'Kết quả tìm kiếm' : null);
+$pageTitle = $categoryId ? category_name($categoryId) : ($q !== '' ? t('home.search_results_for', ['q' => $q]) : null);
 require __DIR__ . '/includes/header.php';
 ?>
 
 <div class="page-header">
-  <h1><?= $q !== '' ? 'Kết quả cho "' . e($q) . '"' : ($categoryId ? e(category_name($categoryId)) : 'Tài nguyên mới nhất') ?></h1>
-  <span class="result-count"><?= $total ?> tài nguyên</span>
+  <h1><?= $q !== '' ? t('home.search_results_for', ['q' => e($q)]) : ($categoryId ? e(category_name($categoryId)) : t('home.latest_title')) ?></h1>
+  <span class="result-count"><?= t('home.resource_count', ['n' => $total]) ?></span>
 </div>
 
 <div class="layout">
-  <aside class="sidebar">
-    <h3>Danh mục</h3>
-    <ul class="sidebar-list">
-      <li><a href="<?= e(SITE_URL) ?>/index.php" class="<?= $categoryId === 0 ? 'active' : '' ?>">
-        <span>Tất cả</span><span class="count"><?= array_sum($countsByCategory) ?></span>
-      </a></li>
-      <?php foreach (get_categories() as $cat): ?>
-        <li><a href="<?= e(SITE_URL) ?>/index.php?category=<?= (int)$cat['category_id'] ?>" class="<?= $categoryId === (int)$cat['category_id'] ? 'active' : '' ?>">
-          <span><?= e($cat['category_name']) ?></span>
-          <span class="count"><?= $countsByCategory[(int)$cat['category_id']] ?? 0 ?></span>
+  <div class="sidebar-col">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <h3><?= t('home.categories') ?></h3>
+        <?php if ($categoryId || $q !== ''): ?>
+          <a class="sidebar-clear" href="<?= e(SITE_URL) ?>/index.php"><?= t('home.clear_filter') ?></a>
+        <?php endif; ?>
+      </div>
+      <ul class="sidebar-list">
+        <li><a href="<?= e(SITE_URL) ?>/index.php" class="<?= $categoryId === 0 ? 'active' : '' ?>">
+          <span class="check" aria-hidden="true"></span>
+          <span class="label"><?= t('home.all_pill') ?></span>
+          <span class="count"><?= array_sum($countsByCategory) ?></span>
         </a></li>
-      <?php endforeach; ?>
-    </ul>
-    <?php if ($categoryId || $q !== ''): ?>
-      <a class="sidebar-clear" href="<?= e(SITE_URL) ?>/index.php">Xóa bộ lọc</a>
-    <?php endif; ?>
-  </aside>
+        <?php foreach (get_categories() as $cat): ?>
+          <li><a href="<?= e(SITE_URL) ?>/index.php?category=<?= (int)$cat['category_id'] ?>" class="<?= $categoryId === (int)$cat['category_id'] ? 'active' : '' ?>">
+            <span class="check" aria-hidden="true"></span>
+            <span class="label"><?= e($cat['category_name']) ?></span>
+            <span class="count"><?= $countsByCategory[(int)$cat['category_id']] ?? 0 ?></span>
+          </a></li>
+        <?php endforeach; ?>
+      </ul>
+    </aside>
+
+    <button type="button" class="btn btn-outline btn-block donate-trigger" id="donateTrigger">Donate me</button>
+  </div>
 
   <div class="content">
     <?php if (empty($projects)): ?>
       <div class="empty-state">
         <h1>—</h1>
-        <p>Không tìm thấy tài nguyên phù hợp.</p>
+        <p><?= t('home.empty_title') ?></p>
       </div>
     <?php else: ?>
       <div class="resource-grid">
@@ -88,6 +97,7 @@ require __DIR__ . '/includes/header.php';
           <a class="resource-card" href="<?= e(SITE_URL) ?>/project.php?id=<?= (int)$p['project_id'] ?>">
             <div class="resource-thumb">
               <img src="<?= e($p['image'] ?: (SITE_URL . '/assets/img/placeholder.svg')) ?>" alt="<?= e($p['title']) ?>" loading="lazy">
+              <span class="resource-cta"><?= t('home.view_detail') ?></span>
               <button type="button"
                 class="fav-btn <?= in_array((int)$p['project_id'], $favoritedIds, true) ? 'active' : '' ?>"
                 data-project-id="<?= (int)$p['project_id'] ?>"
@@ -101,7 +111,7 @@ require __DIR__ . '/includes/header.php';
               <span class="resource-cat"><?= e(category_name($p['category_id'])) ?></span>
               <h3 class="resource-title"><?= e($p['title']) ?></h3>
               <div class="resource-meta">
-                <span><?= e($p['author'] ?: 'Ẩn danh') ?></span>
+                <span><?= e($p['author'] ?: t('anonymous')) ?></span>
                 <span><?= time_ago($p['create_date']) ?></span>
               </div>
             </div>
@@ -114,6 +124,30 @@ require __DIR__ . '/includes/header.php';
         echo paginate_links($page, $totalPages, $qs);
       ?>
     <?php endif; ?>
+  </div>
+</div>
+
+<div class="donate-modal" id="donateModal">
+  <div class="donate-modal-backdrop" id="donateModalBackdrop"></div>
+  <div class="donate-modal-box">
+    <button type="button" class="donate-modal-close" id="donateModalClose" aria-label="<?= e(t('home.donate_close')) ?>">&times;</button>
+    <h3>Donate me</h3>
+    <div class="donate-info">
+      <div class="donate-info-row">
+        <span class="donate-label"><?= t('home.donate_bank') ?></span>
+        <span class="donate-value">BIDV</span>
+      </div>
+      <div class="donate-info-row">
+        <span class="donate-label"><?= t('home.donate_holder') ?></span>
+        <span class="donate-value">CHU QUANG VU</span>
+      </div>
+      <div class="donate-info-row">
+        <span class="donate-label"><?= t('home.donate_account') ?></span>
+        <span class="donate-value" id="donateAccountNumber">8854188433</span>
+        <button type="button" class="donate-copy-btn" id="donateCopyBtn" data-copy="8854188433" data-label="<?= e(t('home.donate_copy')) ?>" data-copied="<?= e(t('home.donate_copied')) ?>"><?= t('home.donate_copy') ?></button>
+      </div>
+    </div>
+    <img src="https://i.ibb.co/FSHRqX8/536ccdea904611184857.jpg" alt="<?= e(t('home.donate_qr_alt')) ?>" class="donate-qr-img">
   </div>
 </div>
 

@@ -8,17 +8,17 @@ $stmt->execute([$user['user_id']]);
 $projects = $stmt->fetchAll();
 $favoritedIds = array_map('intval', array_column($projects, 'project_id'));
 
-$pageTitle = 'Mục yêu thích';
+$pageTitle = t('favorites.title');
 require __DIR__ . '/includes/header.php';
 ?>
 
-<div class="page-header"><h1>Mục yêu thích</h1></div>
+<div class="page-header"><h1><?= t('favorites.title') ?></h1></div>
 
 <?php if (empty($projects)): ?>
   <div class="empty-state">
     <h1>—</h1>
-    <p>Bạn chưa yêu thích tài nguyên nào.</p>
-    <a class="btn btn-primary" href="<?= e(SITE_URL) ?>/index.php">Khám phá tài nguyên</a>
+    <p><?= t('favorites.empty') ?></p>
+    <a class="btn btn-primary" href="<?= e(SITE_URL) ?>/index.php"><?= t('favorites.explore') ?></a>
   </div>
 <?php else: ?>
   <div class="resource-grid" style="padding-bottom:60px;">
@@ -39,7 +39,7 @@ require __DIR__ . '/includes/header.php';
           <span class="resource-cat"><?= e(category_name($p['category_id'])) ?></span>
           <h3 class="resource-title"><?= e($p['title']) ?></h3>
           <div class="resource-meta">
-            <span><?= e($p['author'] ?: 'Ẩn danh') ?></span>
+            <span><?= e($p['author'] ?: t('anonymous')) ?></span>
             <span><?= time_ago($p['create_date']) ?></span>
           </div>
         </div>

@@ -12,18 +12,13 @@ if (!$project) {
     http_response_code(404);
     die('Không tìm thấy tài nguyên.');
 }
-if ((int)$project['user_id'] !== (int)$user['user_id'] && !is_admin()) {
-    http_response_code(403);
-    require __DIR__ . '/../403.php';
-    exit;
-}
 
 $errors = [];
 $old = [
     'title' => $project['title'],
     'category_id' => (int)$project['category_id'],
     'author' => $project['author'],
-    'description' => strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $project['description'])),
+    'description' => $project['description'],
     'source' => $project['source'],
     'status' => $project['status'],
 ];
@@ -42,25 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($old['source'] === '' || !filter_var($old['source'], FILTER_VALIDATE_URL)) $errors[] = 'Vui lòng nhập đường dẫn tải xuống hợp lệ.';
 
     $imageUrl = $project['image'];
-    if (!empty($_FILES['cover']['tmp_name']) && $_FILES['cover']['error'] === UPLOAD_ERR_OK) {
-        $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        $mime = mime_content_type($_FILES['cover']['tmp_name']);
-        if (!in_array($mime, $allowed, true)) {
-            $errors[] = 'Ảnh bìa phải là JPG, PNG, WEBP hoặc GIF.';
-        } elseif ($_FILES['cover']['size'] > 8 * 1024 * 1024) {
-            $errors[] = 'Ảnh bìa tối đa 8MB.';
+    $newCoverUrl = trim($_POST['cover_url'] ?? '');
+    if ($newCoverUrl !== '') {
+        if (!is_valid_cover_url($newCoverUrl)) {
+            $errors[] = 'Tải ảnh bìa lên thất bại, vui lòng thử lại.';
         } else {
-            $uploaded = upload_image_imgbb($_FILES['cover']['tmp_name']);
-            if ($uploaded === false) {
-                $errors[] = 'Tải ảnh bìa lên thất bại, vui lòng thử lại.';
-            } else {
-                $imageUrl = $uploaded;
-            }
+            $imageUrl = $newCoverUrl;
         }
     }
 
     if (!$errors) {
-        $description = nl2br(e($old['description']), false);
+        $description = clean_html($old['description']);
         $update = db()->prepare('UPDATE project SET title = ?, description = ?, author = ?, source = ?, category_id = ?, image = ?, status = ? WHERE project_id = ?');
         $update->execute([
             $old['title'],
@@ -73,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id,
         ]);
         flash('success', 'Cập nhật tài nguyên thành công!');
-        redirect(SITE_URL . '/project.php?id=' . $id);
+        redirect(SITE_URL . '/staff/index.php');
     }
 }
 
@@ -88,9 +75,10 @@ require __DIR__ . '/../includes/header.php';
     <div class="alert alert-error"><?= e($err) ?></div>
   <?php endforeach; ?>
 
-  <form method="post" enctype="multipart/form-data" novalidate>
+  <form method="post" novalidate>
     <?= csrf_field() ?>
     <input type="hidden" name="id" value="<?= (int)$id ?>">
+    <input type="hidden" name="cover_url" id="coverUrlInput" value="">
     <div class="form-group">
       <label for="title">Tiêu đề</label>
       <input class="form-control" type="text" id="title" name="title" value="<?= e($old['title']) ?>" required>
@@ -127,10 +115,10 @@ require __DIR__ . '/../includes/header.php';
     <div class="form-group">
       <label for="coverInput">Ảnh bìa</label>
       <div class="upload-drop">
-        <img class="upload-preview" src="<?= e($project['image'] ?: (SITE_URL . '/assets/img/placeholder.svg')) ?>" alt="Ảnh hiện tại">
-        <input type="file" id="coverInput" name="cover" accept="image/*">
+        <input type="file" id="coverInput" accept="image/*" data-imgbb-key="<?= e(IMGBB_API_KEY) ?>">
         <span class="hint">Để trống nếu muốn giữ ảnh hiện tại.</span>
-        <img id="coverPreview" class="upload-preview" style="display:none;" alt="Xem trước ảnh mới">
+        <span id="coverUploadStatus" class="hint"></span>
+        <img id="coverPreview" class="upload-preview" src="<?= e($project['image'] ?: (SITE_URL . '/assets/img/placeholder.svg')) ?>" alt="Ảnh bìa">
       </div>
     </div>
     <button type="submit" class="btn btn-primary btn-block">Lưu thay đổi</button>

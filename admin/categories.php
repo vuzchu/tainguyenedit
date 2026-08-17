@@ -39,16 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $categoryRows = db()->query('SELECT c.*, (SELECT COUNT(*) FROM project p WHERE p.category_id = c.category_id) AS project_count FROM category c ORDER BY c.category_name ASC')->fetchAll();
 
 $pageTitle = 'Quản lý danh mục';
-require __DIR__ . '/../includes/header.php';
+$activeAdminNav = 'categories';
+require __DIR__ . '/../includes/admin_header.php';
+require __DIR__ . '/../includes/admin_sidebar_end.php';
 ?>
 
 <div class="page-header"><h1>Danh mục</h1></div>
-<div class="admin-tabs">
-  <a href="<?= e(SITE_URL) ?>/admin/index.php">Tổng quan</a>
-  <a href="<?= e(SITE_URL) ?>/admin/users.php">Người dùng</a>
-  <a class="active" href="<?= e(SITE_URL) ?>/admin/categories.php">Danh mục</a>
-  <a href="<?= e(SITE_URL) ?>/admin/projects.php">Tất cả tài nguyên</a>
-</div>
 
 <?php foreach ($errors as $err): ?>
   <div class="alert alert-error"><?= e($err) ?></div>
@@ -91,4 +87,4 @@ require __DIR__ . '/../includes/header.php';
   </table>
 </div>
 
-<?php require __DIR__ . '/../includes/footer.php'; ?>
+<?php require __DIR__ . '/../includes/admin_footer.php'; ?>
