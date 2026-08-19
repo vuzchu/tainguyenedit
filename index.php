@@ -14,8 +14,9 @@ if ($categoryId > 0) {
     $params['category_id'] = $categoryId;
 }
 if ($q !== '') {
-    $where[] = '(title LIKE :q OR author LIKE :q)';
-    $params['q'] = '%' . $q . '%';
+    $where[] = '(title LIKE :q1 OR author LIKE :q2)';
+    $params['q1'] = '%' . $q . '%';
+    $params['q2'] = '%' . $q . '%';
 }
 $whereSql = implode(' AND ', $where);
 
